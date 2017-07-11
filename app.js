@@ -2,9 +2,11 @@ const state = require('./state')
 const post = require('./post')
 const linkInput = require('./link-input')
 const h = require('izi/h')
+const arr = require('izi/arr')
 
-const getIp = () => Array(4).fill().map((_,i) => state[`ip${i}`]()).join('.')
-const sendSms = number => post(`${getIp()}:8766`, {
+const ipParts = arr.range(4).map(i => state[`ip${i}`])
+const call = f => f()
+const sendSms = number => post(`${ipParts.map(call).join('.')}:8766`, {
   number,
   message: state.message(),
   token: state.token(),
@@ -14,11 +16,11 @@ const chainSend = (q, num) => q
   .then(() => sendSms(num))
   .then(console.log, console.error)
 
-const sendAll = () => Array.from(new Set(state.numbers()
+const sendAll = () => arr.unique(state.numbers()
   .replace(/[ ._-]/g, '') // remove number separators
   .replace(/([^0-9]+)/g, ',') // normalize
   .split(',') // split by number
-  .filter(Boolean))) // cleanup
+  .filter(Boolean)) // cleanup
   .reduce(chainSend, Promise.resolve())
 
 
@@ -107,10 +109,13 @@ document.body.appendChild(h.div.style({
   h.div([ input('token'), text(' (optionnal)') ]),
   title('SMS Gateway Address'),
   h.div([
-    text('192.168.'),
-    numInp('ipBase'),
+    numInp('ip0'),
     text('.'),
-    numInp('ipEnd'),
+    numInp('ip1'),
+    text('.'),
+    numInp('ip2'),
+    text('.'),
+    numInp('ip3', { autofocus: true }),
     text(':8766'),
   ]),
   title('Numbers'),
