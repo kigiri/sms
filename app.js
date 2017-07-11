@@ -1,25 +1,23 @@
 const { numbers, message, ipBase, ipEnd, token } = require('./state')
+const post = require('./post')
 const linkInput = require('./link-input')
 const h = require('izi/h')
 
-const send = str => console.log(str) ||  Promise.resolve({ status: 200 })
-
-const sendSms = number =>
-  send(`http://192.168.${ipBase()}.${ipEnd()}:8766?number=${number
-    }&message=${encodeURIComponent(message())}&token=${token()}`)
-  .then(r => r.status === 200
-    ? `Message sent to ${number}`
-    : Promise.reject(Error(`Failing to send to ${number} Status: ${r.status}`)))
+const sendSms = number => post(`192.168.${ipBase()}.${ipEnd()}:8766`, {
+  number,
+  message: message(),
+  token: token(),
+}).then(() => `Message sent to ${number}`)
 
 const chainSend = (q, num) => q
   .then(() => sendSms(num))
   .then(console.log, console.error)
 
-const sendAll = () => numbers()
+const sendAll = () => Array.from(new Set(numbers()
   .replace(/[ ._-]/g, '') // remove number separators
   .replace(/([^0-9]+)/g, ',') // normalize
   .split(',') // split by number
-  .filter(Boolean) // cleanup
+  .filter(Boolean))) // cleanup
   .reduce(chainSend, Promise.resolve())
 
 
@@ -107,7 +105,13 @@ document.body.appendChild(h.div.style({
   title('Token'),
   h.div([ input('token'), text(' (optionnal)') ]),
   title('SMS Gateway Address'),
-  h.div([ text('192.168.'), numInp('ipBase'), text('.'), numInp('ipEnd') ]),
+  h.div([
+    text('192.168.'),
+    numInp('ipBase'),
+    text('.'),
+    numInp('ipEnd'),
+    text(':8766'),
+  ]),
   title('Numbers'),
   textArea('numbers'),
   title('Message'),
