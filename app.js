@@ -1,19 +1,20 @@
-const { numbers, message, ipBase, ipEnd, token } = require('./state')
+const state = require('./state')
 const post = require('./post')
 const linkInput = require('./link-input')
 const h = require('izi/h')
 
-const sendSms = number => post(`192.168.${ipBase()}.${ipEnd()}:8766`, {
+const getIp = () => Array(4).fill().map((_,i) => state[`ip${i}`]()).join('.')
+const sendSms = number => post(`${getIp()}:8766`, {
   number,
-  message: message(),
-  token: token(),
+  message: state.message(),
+  token: state.token(),
 }).then(() => `Message sent to ${number}`)
 
 const chainSend = (q, num) => q
   .then(() => sendSms(num))
   .then(console.log, console.error)
 
-const sendAll = () => Array.from(new Set(numbers()
+const sendAll = () => Array.from(new Set(state.numbers()
   .replace(/[ ._-]/g, '') // remove number separators
   .replace(/([^0-9]+)/g, ',') // normalize
   .split(',') // split by number
